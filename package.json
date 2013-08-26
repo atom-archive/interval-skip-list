@@ -1,0 +1,25 @@
+{
+  "name": "interval-skip-list",
+  "version": "0.0.0",
+  "description": "A data structure for finding all intervals that overlap a point in O(ln n)",
+  "main": "lib/interval-skip-list.js",
+  "scripts": {
+    "test": "jasmine-focused --coffee spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/atom/interval-skip-list.git"
+  },
+  "keywords": [
+    "data-structures",
+    "collections",
+    "intervals"
+  ],
+  "author": "Nathan Sobo",
+  "license": "BSD",
+  "devDependencies": {
+    "coffee-script": "~1.6.3",
+    "jasmine-focused": "~0.12.0",
+    "underscore": "~1.5.1"
+  }
+}
