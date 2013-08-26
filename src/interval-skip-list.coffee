@@ -20,14 +20,28 @@ class IntervalSkipList
   #
   # * marker: Identifies the interval. Must be a string or a number.
   insert: (marker, startIndex, endIndex) ->
-    startNode = @insertIndex(startIndex)
-    endNode = @insertIndex(endIndex)
+    startNode = @insertNode(startIndex)
+    endNode = @insertNode(endIndex)
     @placeMarker(marker, startNode, endNode)
+    @intervalsByMarker[marker] = [startIndex, endIndex]
+
+  # Public: Remove an interval by its id.
+  remove: (marker) ->
+    [startIndex, endIndex] = @intervalsByMarker[marker]
+    delete @intervalsByMarker[marker]
+    startNode = @findClosestNode(startIndex)
+    endNode = @findClosestNode(endIndex)
+    @removeMarker(marker, startNode, endNode)
+
+    # Nodes may serve as end-points for multiple intervals, so only remove a
+    # node if its endpointMarkers set is empty
+    @removeNode(startIndex) if startNode.endpointMarkers.length is 0
+    @removeNode(endIndex) if endNode.endpointMarkers.length is 0
 
   # Private: Find or insert a node for the given index. If a node is inserted,
   # update existing markers to preserve the invariant that they follow the
   # shortest possible path between their start and end nodes.
-  insertIndex: (index) ->
+  insertNode: (index) ->
     update = @buildUpdateArray()
     closestNode = @findClosestNode(index, update)
     if closestNode.index > index
@@ -52,16 +66,16 @@ class IntervalSkipList
 
     for i in [0...(node.height - 1)]
       for marker in clone(updated[i].markers[i])
-        [start, end] = @intervalsByMarker[marker]
-        if node.next[i + 1].index <= end
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if node.next[i + 1].index <= endIndex
           @removeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
           newPromoted.push(marker)
         else
           node.addMarkerAtLevel(marker, i)
 
       for marker in clone(promoted)
-        [start, end] = @intervalsByMarker[marker]
-        if node.next[i + 1].index <= end
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if node.next[i + 1].index <= endIndex
           @removeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
         else
           node.addMarkerAtLevel(marker, i)
@@ -78,14 +92,14 @@ class IntervalSkipList
     newPromoted.length = 0
     for i in [0...node.height - 1]
       for marker in clone(updated[i].markers[i])
-        [start, end] = @intervalsByMarker[marker]
-        if start <= updated[i + 1].index
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if startIndex <= updated[i + 1].index
           newPromoted.push(marker)
           @removeMarkerOnPath(marker, updated[i + 1], node, i)
 
       for marker in clone(promoted)
-        [start, end] = @intervalsByMarker[marker]
-        if start <= updated[i + 1].index
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if startIndex <= updated[i + 1].index
           @removeMarkerOnPath(marker, updated[i + 1], node, i)
         else
           updated[i].addMarkerAtLevel(marker, i)
@@ -95,10 +109,65 @@ class IntervalSkipList
       newPromoted.length = 0
     updated[i].addMarkersAtLevel(promoted, i)
 
+  # Private: Removes the node at the given index, then adjusts markers downward
+  removeNode: (index) ->
+    update = @buildUpdateArray()
+    node = @findClosestNode(index, update)
+    if node.index is index
+      @adjustMarkersOnRemove(node, update)
+      for i in [0...node.height]
+        update[i].next[i] = node.next[i]
+
+  # Private: Adjusts the height of markers that formerly traveled through the
+  # removed node. They may now need to follow a lower path in order to avoid
+  # overshooting their interval.
+  adjustMarkersOnRemove: (node, updated) ->
+    demoted = []
+    newDemoted = []
+
+    # Phase 1: Lower markers on edges to the left of node if needed
+    for i in [node.height - 1..0]
+      for marker in clone(updated[i].markers[i])
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if node.next[i].index > endIndex
+          newDemoted.push(marker)
+          updated[i].removeMarkerAtLevel(marker, i)
+
+      for marker in clone(demoted)
+        @placeMarkerOnPath(marker, updated[i + 1], updated[i], i)
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if node.next[i].index <= endIndex
+          updated[i].addMarkerAtLevel(marker, i)
+          remove(demoted, marker)
+
+      demoted.push(newDemoted...)
+      newDemoted.length = 0
+
+    # Phase 2: Lower markers on edges to the right of node if needed
+    demoted.length = 0
+    newDemoted.length = 0
+    for i in [node.height - 1..0]
+      for marker in node.markers[i]
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if updated[i].index < startIndex
+          newDemoted.push(marker)
+
+      for marker in clone(demoted)
+        @placeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
+        [startIndex, endIndex] = @intervalsByMarker[marker]
+        if updated[i].index >= startIndex
+          remove(demoted, marker)
+
+      demoted.push(newDemoted...)
+      newDemoted.length = 0
+
   # Private: Place the given marker on the highest possible path between two
   # nodes. It will follow a stair-step pattern, with a flat or ascending portion
   # followed by a flat or descending section.
   placeMarker: (marker, startNode, endNode) ->
+    startNode.endpointMarkers.push(marker)
+    endNode.endpointMarkers.push(marker)
+
     startIndex = startNode.index
     endIndex = endNode.index
     node = startNode
@@ -116,7 +185,28 @@ class IntervalSkipList
       node.addMarkerAtLevel(marker, i)
       node = node.next[i]
 
-    @intervalsByMarker[marker] = [startIndex, endIndex]
+  # Private: Removet the given marker from the stairstep-shaped path between the
+  # startNode and endNode.
+  removeMarker: (marker, startNode, endNode) ->
+    remove(startNode.endpointMarkers, marker)
+    remove(endNode.endpointMarkers, marker)
+
+    startIndex = startNode.index
+    endIndex = endNode.index
+    node = startNode
+    i = 0
+
+    # Unmark non-descending path
+    while node.next[i].index <= endIndex
+      i++ while i < node.height - 1 and node.next[i + 1].index <= endIndex
+      node.removeMarkerAtLevel(marker, i)
+      node = node.next[i]
+
+    # Unmark non-ascending path
+    while node isnt endNode
+      i-- while i > 0 and node.next[i].index > endIndex
+      node.removeMarkerAtLevel(marker, i)
+      node = node.next[i]
 
   # Private: Remove marker on all links between startNode and endNode at the
   # given level
@@ -124,6 +214,14 @@ class IntervalSkipList
     node = startNode
     while node isnt endNode
       node.removeMarkerAtLevel(marker, level)
+      node = node.next[level]
+
+  # Private: Place marker on all links between startNode and endNode at the
+  # given level
+  placeMarkerOnPath: (marker, startNode, endNode, level) ->
+    node = startNode
+    while node isnt endNode
+      node.addMarkerAtLevel(marker, level)
       node = node.next[level]
 
   # Private
@@ -164,6 +262,8 @@ class IntervalSkipList
   verifyMarkerInvariant: ->
     for marker, [startIndex, endIndex] of @intervalsByMarker
       node = @findClosestNode(startIndex)
+      unless node.index is startIndex
+        throw new Error("Could not find node for marker #{marker} with start index #{startIndex}")
       node.verifyMarkerInvariant(marker, endIndex)
 
 class Node
@@ -171,6 +271,7 @@ class Node
     @next = new Array(@height)
     @markers = new Array(@height)
     @markers[i] = [] for i in [0...@height]
+    @endpointMarkers = []
 
   removeMarkerAtLevel: (marker, level) ->
     remove(@markers[level], marker)
@@ -189,6 +290,7 @@ class Node
         unless include(@markers[i], marker)
           throw new Error("Node at #{@index} should have marker #{marker} at level #{i} pointer to node at #{nextIndex} <= #{endIndex}")
         @verifyNotMarkedBelowLevel(marker, i, nextIndex) if i > 0
+        @next[i].verifyMarkerInvariant(marker, endIndex)
         return
     throw new Error("Node at #{@index} should have marker #{marker} on some forward pointer to an index <= #{endIndex}, but it doesn't")
 
