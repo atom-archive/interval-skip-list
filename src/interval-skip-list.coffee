@@ -1,4 +1,4 @@
-{clone, include} = require 'underscore'
+{clone, include, uniq} = require 'underscore'
 
 remove = (array, element) ->
   index = array.indexOf(element)
@@ -14,6 +14,31 @@ class IntervalSkipList
     @tail = new Node(@maxHeight, Infinity)
     @head.next[i] = @tail for i in [0...@maxHeight]
     @intervalsByMarker = {}
+
+  # Public: Returns an array of markers for intervals that contain the given
+  # search index, inclusive of their endpoints.
+  findContaining: (searchIndex) ->
+    markers = []
+    node = @head
+    for i in [@maxHeight - 1..1]
+      # Move forward as far as possible while keeping the node's index less
+      # than the index for which we're searching.
+      while node.next[i].index < searchIndex
+        node = node.next[i]
+      # When the next node's index would be greater than the search index, drop
+      # down a level, recording forward markers at the current level since their
+      # intervals necessarily contain the search index.
+      markers.push(node.markers[i]...)
+
+    # Scan to the node preceding the search index at level 0
+    while node.next[0].index < searchIndex
+      node = node.next[0]
+    markers.push(node.markers[0]...)
+    # If the search index is actually in the list as an endpoint, add the endpoint
+    # markers
+    if node.next[0].index is searchIndex
+      uniq(markers.push(node.next[0].endpointMarkers...))
+    markers
 
   # Public: Insert an interval identified by marker that spans inclusively
   # the given start and end indices.
