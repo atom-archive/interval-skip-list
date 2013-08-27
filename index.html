@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Interval-skip-list by atom</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Interval-skip-list</h1>
+        <p>A JavaScript data structure for finding all intervals that overlap a point.</p>
+
+        <p class="view"><a href="https://github.com/atom/interval-skip-list">View the Project on GitHub <small>atom/interval-skip-list</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/atom/interval-skip-list/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/atom/interval-skip-list/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/atom/interval-skip-list">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="interval-skip-list-" class="anchor" href="#interval-skip-list-"><span class="octicon octicon-link"></span></a>Interval Skip List <a href="https://travis-ci.org/atom/interval-skip-list"><img src="https://travis-ci.org/atom/interval-skip-list.png" alt="Build Status"></a>
+</h1>
+
+<p>This data structure maps intervals to values and allows you to find all
+intervals that contain an index in <code>O(ln(n))</code>, where <code>n</code> is the number of
+intervals stored. This implementation is based on the paper
+<a href="https://www.cise.ufl.edu/tr/DOC/REP-1992-45.pdf">The Interval Skip List</a> by
+Eric N. Hanson.</p>
+
+<div class="highlight"><pre><span class="nv">IntervalSkipList = </span><span class="nx">require</span> <span class="s">'interval-skip-list'</span>
+<span class="nv">list = </span><span class="k">new</span> <span class="nx">IntervalSkipList</span>
+
+<span class="nx">list</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="s">'a'</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="s">'b'</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="s">'c'</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="nx">list</span><span class="p">.</span><span class="nx">findContaining</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># =&gt; ['b']</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">findContaining</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># =&gt; ['b', 'a']</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">findContaining</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># =&gt; ['c']</span>
+
+<span class="nx">list</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="s">'b'</span><span class="p">)</span>
+
+<span class="nx">list</span><span class="p">.</span><span class="nx">findContaining</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># =&gt; ['a']</span>
+</pre></div>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/atom">atom</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
