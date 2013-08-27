@@ -13,6 +13,7 @@
   "bugs": {
     "url": "https://github.com/atom/interval-skip-list/issues"
   },
+  "homepage": "http://atom.github.io/interval-skip-list",
   "keywords": [
     "data-structures",
     "collections",
