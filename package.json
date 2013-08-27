@@ -10,13 +10,21 @@
     "type": "git",
     "url": "http://github.com/atom/interval-skip-list.git"
   },
+  "bugs": {
+    "url": "https://github.com/atom/interval-skip-list/issues"
+  },
   "keywords": [
     "data-structures",
     "collections",
     "intervals"
   ],
   "author": "Nathan Sobo",
-  "license": "BSD",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/atom/interval-skip-list/raw/master/LICENSE.md"
+    }
+  ],
   "devDependencies": {
     "coffee-script": "~1.6.3",
     "jasmine-focused": "~0.12.0",
