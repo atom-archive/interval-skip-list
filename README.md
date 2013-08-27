@@ -6,7 +6,7 @@ intervals stored. This implementation is based on the paper
 [The Interval Skip List](https://www.cise.ufl.edu/tr/DOC/REP-1992-45.pdf) by
 Eric N. Hanson.
 
-```coffee-script
+```coffeescript
 IntervalSkipList = require 'interval-skip-list'
 list = new IntervalSkipList
 
