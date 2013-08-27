@@ -22,7 +22,7 @@ module.exports = (grunt) ->
 
     shell:
       test:
-        command: 'npm test'
+        command: 'jasmine-focused --coffee spec'
         options:
           stdout: true
           stderr: true
@@ -35,4 +35,4 @@ module.exports = (grunt) ->
   grunt.registerTask 'clean', -> require('rimraf').sync('lib')
   grunt.registerTask('lint', ['coffeelint:src', 'coffeelint:test'])
   grunt.registerTask('default', ['coffeelint', 'coffee'])
-  grunt.registerTask('test', ['shell:test'])
+  grunt.registerTask('test', ['lint', 'shell:test'])
