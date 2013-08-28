@@ -40,6 +40,15 @@ class IntervalSkipList
       uniq(markers.push(node.next[0].endpointMarkers...))
     markers
 
+  # Public: Returns an array of markers for intervals that start at the given
+  # search index.
+  findStartingAt: (index) ->
+    node = @findClosestNode(index)
+    if node.index is index
+      node.startingMarkers
+    else
+      []
+
   # Public: Insert an interval identified by marker that spans inclusively
   # the given start and end indices.
   #
@@ -203,8 +212,8 @@ class IntervalSkipList
   # nodes. It will follow a stair-step pattern, with a flat or ascending portion
   # followed by a flat or descending section.
   placeMarker: (marker, startNode, endNode) ->
-    startNode.endpointMarkers.push(marker)
-    endNode.endpointMarkers.push(marker)
+    startNode.addStartingMarker(marker)
+    endNode.addEndingMarker(marker)
 
     startIndex = startNode.index
     endIndex = endNode.index
@@ -226,8 +235,8 @@ class IntervalSkipList
   # Private: Removet the given marker from the stairstep-shaped path between the
   # startNode and endNode.
   removeMarker: (marker, startNode, endNode) ->
-    remove(startNode.endpointMarkers, marker)
-    remove(endNode.endpointMarkers, marker)
+    startNode.removeStartingMarker(marker)
+    endNode.removeEndingMarker(marker)
 
     startIndex = startNode.index
     endIndex = endNode.index
@@ -310,6 +319,24 @@ class Node
     @markers = new Array(@height)
     @markers[i] = [] for i in [0...@height]
     @endpointMarkers = []
+    @startingMarkers = []
+    @endingMarkers = []
+
+  addStartingMarker: (marker) ->
+    @startingMarkers.push(marker)
+    @endpointMarkers.push(marker)
+
+  removeStartingMarker: (marker) ->
+    remove(@startingMarkers, marker)
+    remove(@endpointMarkers, marker)
+
+  addEndingMarker: (marker) ->
+    @endingMarkers.push(marker)
+    @endpointMarkers.push(marker)
+
+  removeEndingMarker: (marker) ->
+    remove(@endingMarkers, marker)
+    remove(@endpointMarkers, marker)
 
   removeMarkerAtLevel: (marker, level) ->
     remove(@markers[level], marker)

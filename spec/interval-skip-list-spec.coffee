@@ -4,6 +4,11 @@ IntervalSkipList = require '../src/interval-skip-list'
 describe "IntervalSkipList", ->
   list = null
 
+  buildRandomList = ->
+    list = new IntervalSkipList
+    times 100, (i) -> performRandomChange(list, i)
+    list
+
   performRandomChange = (list, i) ->
     if Math.random() < .2
       removeRandomInterval(list)
@@ -27,16 +32,25 @@ describe "IntervalSkipList", ->
   describe "::findContaining(index)", ->
     it "returns markers for intervals containing the given index", ->
       times 10, ->
-        list = new IntervalSkipList
-
-        times 100, (i) ->
-          performRandomChange(list, i)
-
+        list = buildRandomList()
         times 10, ->
           index = random(100)
           markers = list.findContaining(index)
           for marker, [startIndex, endIndex] of list.intervalsByMarker
             if startIndex <= index <= endIndex
+              expect(markers).toContain(marker)
+            else
+              expect(markers).not.toContain(marker)
+
+  describe "::findStartingAt(index)", ->
+    it "returns markers for intervals starting at the given index", ->
+      times 10, ->
+        list = buildRandomList()
+        times 10, ->
+          index = random(100)
+          markers = list.findStartingAt(index)
+          for marker, [startIndex, endIndex] of list.intervalsByMarker
+            if startIndex is index
               expect(markers).toContain(marker)
             else
               expect(markers).not.toContain(marker)
