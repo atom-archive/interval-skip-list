@@ -42,9 +42,9 @@ class IntervalSkipList
 
   # Public: Returns an array of markers for intervals that start at the given
   # search index.
-  findStartingAt: (index) ->
-    node = @findClosestNode(index)
-    if node.index is index
+  findStartingAt: (searchIndex) ->
+    node = @findClosestNode(searchIndex)
+    if node.index is searchIndex
       node.startingMarkers
     else
       []
