@@ -1,4 +1,4 @@
-{clone, include, first, last, intersection} = require 'underscore'
+{clone, include, first, last, union, intersection} = require 'underscore'
 
 remove = (array, element) ->
   index = array.indexOf(element)
@@ -48,6 +48,11 @@ class IntervalSkipList
       markers.concat(node.startingMarkers)
     else
       markers
+
+  # Public: Returns an array of markers for intervals that intersect the given
+  # search indices.
+  findIntersecting: (searchIndices...) ->
+    union(searchIndices.map((searchIndex) => @findContaining(searchIndex))...)
 
   # Public: Returns an array of markers for intervals that start at the given
   # search index.

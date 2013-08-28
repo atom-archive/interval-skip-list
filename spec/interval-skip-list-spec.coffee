@@ -1,5 +1,5 @@
 IntervalSkipList = require '../src/interval-skip-list'
-{random, times, keys, uniq, all} = require 'underscore'
+{random, times, keys, uniq, all, any} = require 'underscore'
 
 describe "IntervalSkipList", ->
   list = null
@@ -57,6 +57,20 @@ describe "IntervalSkipList", ->
                 expect(markers).toContain(marker)
               else
                 expect(markers).not.toContain(marker)
+
+  describe "::findIntersecting(indices...)", ->
+    it "returns markers for intervals intersecting the given set of indices", ->
+      times 10, ->
+        list = buildRandomList()
+        times 10, ->
+          indices = []
+          times random(2, 5), -> indices.push(random(100))
+          markers = list.findIntersecting(indices...)
+          for marker, [startIndex, endIndex] of list.intervalsByMarker
+            if any indices, ((index) -> startIndex <= index <= endIndex)
+              expect(markers).toContain(marker)
+            else
+              expect(markers).not.toContain(marker)
 
   describe "::findStartingAt(index)", ->
     it "returns markers for intervals starting at the given index", ->
