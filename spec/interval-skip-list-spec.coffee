@@ -24,32 +24,34 @@ describe "IntervalSkipList", ->
     b = random(0, 100)
     [Math.min(a, b), Math.max(a, b)]
 
-  it "can find all intervals overlapping an index", ->
-    times 10, ->
-      list = new IntervalSkipList
-
-      times 100, (i) ->
-        performRandomChange(list, i)
-
+  describe "::findContaining(index)", ->
+    it "returns markers for intervals containing the given index", ->
       times 10, ->
-        index = random(100)
-        markers = list.findContaining(index)
-        for marker, [startIndex, endIndex] of list.intervalsByMarker
-          if startIndex <= index <= endIndex
-            expect(markers).toContain(marker)
-          else
-            expect(markers).not.toContain(marker)
+        list = new IntervalSkipList
 
-  it "can insert intervals without violating the marker invariant", ->
-    times 10, ->
-      list = new IntervalSkipList
-      times 100, (i) ->
-        insertRandomInterval(list, i.toString())
-        list.verifyMarkerInvariant()
+        times 100, (i) ->
+          performRandomChange(list, i)
 
-  it "can insert and remove intervals without violating the marker invariant", ->
-    times 10, ->
-      list = new IntervalSkipList
-      times 100, (i) ->
-        performRandomChange(list, i)
-        list.verifyMarkerInvariant()
+        times 10, ->
+          index = random(100)
+          markers = list.findContaining(index)
+          for marker, [startIndex, endIndex] of list.intervalsByMarker
+            if startIndex <= index <= endIndex
+              expect(markers).toContain(marker)
+            else
+              expect(markers).not.toContain(marker)
+
+  describe "maintenance of the marker invariant", ->
+    it "can insert intervals without violating the marker invariant", ->
+      times 10, ->
+        list = new IntervalSkipList
+        times 100, (i) ->
+          insertRandomInterval(list, i.toString())
+          list.verifyMarkerInvariant()
+
+    it "can insert and remove intervals without violating the marker invariant", ->
+      times 10, ->
+        list = new IntervalSkipList
+        times 100, (i) ->
+          performRandomChange(list, i)
+          list.verifyMarkerInvariant()
