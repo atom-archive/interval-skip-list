@@ -44,15 +44,22 @@ class IntervalSkipList
   # the given start and end indices.
   #
   # * marker: Identifies the interval. Must be a string or a number.
+  #
+  # Throws an exception if the marker already exists in the list. Use ::update
+  # instead if you want to update an existing marker.
   insert: (marker, startIndex, endIndex) ->
+    if @intervalsByMarker[marker]?
+      throw new Error("Interval for #{marker} already exists.")
     startNode = @insertNode(startIndex)
     endNode = @insertNode(endIndex)
     @placeMarker(marker, startNode, endNode)
     @intervalsByMarker[marker] = [startIndex, endIndex]
 
-  # Public: Remove an interval by its id.
+  # Public: Remove an interval by its id. Does nothing if the interval does not
+  # exist.
   remove: (marker) ->
-    [startIndex, endIndex] = @intervalsByMarker[marker]
+    return unless interval = @intervalsByMarker[marker]
+    [startIndex, endIndex] = interval
     delete @intervalsByMarker[marker]
     startNode = @findClosestNode(startIndex)
     endNode = @findClosestNode(endIndex)
@@ -62,6 +69,12 @@ class IntervalSkipList
     # node if its endpointMarkers set is empty
     @removeNode(startIndex) if startNode.endpointMarkers.length is 0
     @removeNode(endIndex) if endNode.endpointMarkers.length is 0
+
+  # Public: Removes the interval for the given marker if one exists, then
+  # inserts the a new interval for the marker based on startIndex and endIndex.
+  update: (marker, startIndex, endIndex) ->
+    @remove(marker)
+    @insert(marker, startIndex, endIndex)
 
   # Private: Find or insert a node for the given index. If a node is inserted,
   # update existing markers to preserve the invariant that they follow the
