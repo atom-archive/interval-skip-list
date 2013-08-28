@@ -1,5 +1,5 @@
 IntervalSkipList = require '../src/interval-skip-list'
-{random, times, keys} = require 'underscore'
+{random, times, keys, uniq, all} = require 'underscore'
 
 describe "IntervalSkipList", ->
   list = null
@@ -29,18 +29,34 @@ describe "IntervalSkipList", ->
     b = random(0, 100)
     [Math.min(a, b), Math.max(a, b)]
 
-  describe "::findContaining(index)", ->
-    it "returns markers for intervals containing the given index", ->
-      times 10, ->
-        list = buildRandomList()
+  describe "::findContaining(index...)", ->
+    describe "when passed a single index", ->
+      it "returns markers for intervals containing the given index", ->
         times 10, ->
-          index = random(100)
-          markers = list.findContaining(index)
-          for marker, [startIndex, endIndex] of list.intervalsByMarker
-            if startIndex <= index <= endIndex
-              expect(markers).toContain(marker)
-            else
-              expect(markers).not.toContain(marker)
+          list = buildRandomList()
+          times 10, ->
+            index = random(100)
+            markers = list.findContaining(index)
+            expect(uniq(markers)).toEqual markers
+            for marker, [startIndex, endIndex] of list.intervalsByMarker
+              if startIndex <= index <= endIndex
+                expect(markers).toContain(marker)
+              else
+                expect(markers).not.toContain(marker)
+
+    describe "when passed multiple indices", ->
+      it "returns markers for intervals containing all the given indices", ->
+        times 10, ->
+          list = buildRandomList()
+          times 10, ->
+            indices = []
+            times random(2, 5), -> indices.push(random(100))
+            markers = list.findContaining(indices...)
+            for marker, [startIndex, endIndex] of list.intervalsByMarker
+              if all(indices, (index) -> startIndex <= index <= endIndex)
+                expect(markers).toContain(marker)
+              else
+                expect(markers).not.toContain(marker)
 
   describe "::findStartingAt(index)", ->
     it "returns markers for intervals starting at the given index", ->

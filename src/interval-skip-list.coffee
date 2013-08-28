@@ -1,4 +1,4 @@
-{clone, include, uniq} = require 'underscore'
+{clone, include, first, last, intersection} = require 'underscore'
 
 remove = (array, element) ->
   index = array.indexOf(element)
@@ -15,9 +15,14 @@ class IntervalSkipList
     @head.next[i] = @tail for i in [0...@maxHeight]
     @intervalsByMarker = {}
 
-  # Public: Returns an array of markers for intervals that contain the given
-  # search index, inclusive of their endpoints.
-  findContaining: (searchIndex) ->
+  # Public: Returns an array of markers for intervals that contain all the given
+  # search indices, inclusive of their endpoints.
+  findContaining: (searchIndices...) ->
+    if searchIndices.length > 1
+      searchIndices = @sortIndices(searchIndices)
+      return intersection(@findContaining(first(searchIndices)), @findContaining(last(searchIndices)))
+
+    searchIndex = searchIndices[0]
     markers = []
     node = @head
     for i in [@maxHeight - 1..1]
@@ -34,11 +39,15 @@ class IntervalSkipList
     while node.next[0].index < searchIndex
       node = node.next[0]
     markers.push(node.markers[0]...)
-    # If the search index is actually in the list as an endpoint, add the endpoint
-    # markers
-    if node.next[0].index is searchIndex
-      uniq(markers.push(node.next[0].endpointMarkers...))
-    markers
+
+    # Scan to the next node, which is >= the search index. If it is equal to the
+    # search index, we can add any markers starting here to the set of
+    # containing markers
+    node = node.next[0]
+    if node.index is searchIndex
+      markers.concat(node.startingMarkers)
+    else
+      markers
 
   # Public: Returns an array of markers for intervals that start at the given
   # search index.
@@ -305,6 +314,9 @@ class IntervalSkipList
       update?[i] = currentNode
     currentNode.next[0]
 
+  sortIndices: (indices) ->
+    clone(indices).sort (a, b) -> if a < b then -1 else 1
+
   # Private: Returns a height between 1 and maxHeight (inclusive). Taller heights
   # are logarithmically less probable than shorter heights because each increase
   # in height requires us to win a coin toss weighted by @probability.
@@ -355,6 +367,9 @@ class Node
 
   addMarkersAtLevel: (markers, level) ->
     @addMarkerAtLevel(marker, level) for marker in markers
+
+  markersAboveLevel: (level) ->
+    flatten(@markers[level...@height])
 
   verifyMarkerInvariant: (marker, endIndex) ->
     return if @index is endIndex
