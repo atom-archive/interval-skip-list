@@ -49,6 +49,15 @@ class IntervalSkipList
     else
       []
 
+  # Public: Returns an array of markers for intervals that end at the given
+  # search index.
+  findEndingAt: (searchIndex) ->
+    node = @findClosestNode(searchIndex)
+    if node.index is searchIndex
+      node.endingMarkers
+    else
+      []
+
   # Public: Insert an interval identified by marker that spans inclusively
   # the given start and end indices.
   #

@@ -55,6 +55,19 @@ describe "IntervalSkipList", ->
             else
               expect(markers).not.toContain(marker)
 
+  describe "::findEndingAt(index)", ->
+    it "returns markers for intervals ending at the given index", ->
+      times 10, ->
+        list = buildRandomList()
+        times 10, ->
+          index = random(100)
+          markers = list.findEndingAt(index)
+          for marker, [startIndex, endIndex] of list.intervalsByMarker
+            if endIndex is index
+              expect(markers).toContain(marker)
+            else
+              expect(markers).not.toContain(marker)
+
   describe "maintenance of the marker invariant", ->
     it "can insert intervals without violating the marker invariant", ->
       times 10, ->
