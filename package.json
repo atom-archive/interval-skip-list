@@ -4,6 +4,7 @@
   "description": "A data structure for finding all intervals that overlap a point in O(ln n)",
   "main": "lib/interval-skip-list.js",
   "scripts": {
+    "prepublish": "grunt clean lint coffee",
     "test": "grunt test"
   },
   "repository": {
