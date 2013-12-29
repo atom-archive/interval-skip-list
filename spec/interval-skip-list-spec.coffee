@@ -138,3 +138,25 @@ describe "IntervalSkipList", ->
         times 100, (i) ->
           performRandomChange(list, i)
           list.verifyMarkerInvariant()
+
+  it "can use a custom comparator function", ->
+    list = new IntervalSkipList
+      minIndex: [-Infinity]
+      maxIndex: [Infinity]
+      compare: (a, b) ->
+        if a[0] < b[0]
+          -1
+        else if a[0] > b[0]
+          1
+        else
+          if a[1] < b[1]
+            -1
+          else if a[1] > b[1]
+            1
+          else
+            0
+
+    list.insert("a", [1, 2], [3, 4])
+    list.insert("b", [2, 1], [3, 10])
+    expect(list.findContaining([1, Infinity])).toEqual ["a"]
+    expect(list.findContaining([2, 20])).toEqual ["a", "b"]

@@ -4,14 +4,27 @@ remove = (array, element) ->
   index = array.indexOf(element)
   array.splice(index, 1) unless index is -1
 
+DefaultComparator = (a, b) ->
+  if a < b
+    -1
+  else if a > b
+    1
+  else
+    0
+
 module.exports =
 class IntervalSkipList
   maxHeight: 8
   probability: .25
 
-  constructor: ->
-    @head = new Node(@maxHeight, -Infinity)
-    @tail = new Node(@maxHeight, Infinity)
+  constructor: (params) ->
+    {@compare, minIndex, maxIndex} = params if params?
+    @compare ?= DefaultComparator
+    minIndex ?= -Infinity
+    maxIndex ?= Infinity
+
+    @head = new Node(@maxHeight, minIndex)
+    @tail = new Node(@maxHeight, maxIndex)
     @head.next[i] = @tail for i in [0...@maxHeight]
     @intervalsByMarker = {}
 
@@ -28,7 +41,7 @@ class IntervalSkipList
     for i in [@maxHeight - 1..1]
       # Move forward as far as possible while keeping the node's index less
       # than the index for which we're searching.
-      while node.next[i].index < searchIndex
+      while @compare(node.next[i].index, searchIndex) < 0
         node = node.next[i]
       # When the next node's index would be greater than the search index, drop
       # down a level, recording forward markers at the current level since their
@@ -36,7 +49,7 @@ class IntervalSkipList
       markers.push(node.markers[i]...)
 
     # Scan to the node preceding the search index at level 0
-    while node.next[0].index < searchIndex
+    while @compare(node.next[0].index, searchIndex) < 0
       node = node.next[0]
     markers.push(node.markers[0]...)
 
@@ -44,7 +57,7 @@ class IntervalSkipList
     # search index, we can add any markers starting here to the set of
     # containing markers
     node = node.next[0]
-    if node.index is searchIndex
+    if @compare(node.index, searchIndex) is 0
       markers.concat(node.startingMarkers)
     else
       markers
@@ -77,7 +90,7 @@ class IntervalSkipList
   findStartingIn: (searchStartIndex, searchEndIndex) ->
     markers = []
     node = @findClosestNode(searchStartIndex)
-    while node.index <= searchEndIndex
+    while @compare(node.index, searchEndIndex) <= 0
       markers.push(node.startingMarkers...)
       node = node.next[0]
     markers
@@ -87,7 +100,7 @@ class IntervalSkipList
   findEndingIn: (searchStartIndex, searchEndIndex) ->
     markers = []
     node = @findClosestNode(searchStartIndex)
-    while node.index <= searchEndIndex
+    while @compare(node.index, searchEndIndex) <= 0
       markers.push(node.endingMarkers...)
       node = node.next[0]
     markers
@@ -134,7 +147,7 @@ class IntervalSkipList
   insertNode: (index) ->
     update = @buildUpdateArray()
     closestNode = @findClosestNode(index, update)
-    if closestNode.index > index
+    if @compare(closestNode.index, index) > 0
       newNode = new Node(@getRandomNodeHeight(), index)
       for i in [0...newNode.height]
         prevNode = update[i]
@@ -157,7 +170,7 @@ class IntervalSkipList
     for i in [0...(node.height - 1)]
       for marker in clone(updated[i].markers[i])
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if node.next[i + 1].index <= endIndex
+        if @compare(node.next[i + 1].index, endIndex) <= 0
           @removeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
           newPromoted.push(marker)
         else
@@ -165,7 +178,7 @@ class IntervalSkipList
 
       for marker in clone(promoted)
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if node.next[i + 1].index <= endIndex
+        if @compare(node.next[i + 1].index, endIndex) <= 0
           @removeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
         else
           node.addMarkerAtLevel(marker, i)
@@ -183,13 +196,13 @@ class IntervalSkipList
     for i in [0...node.height - 1]
       for marker in clone(updated[i].markers[i])
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if startIndex <= updated[i + 1].index
+        if @compare(startIndex, updated[i + 1].index) <= 0
           newPromoted.push(marker)
           @removeMarkerOnPath(marker, updated[i + 1], node, i)
 
       for marker in clone(promoted)
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if startIndex <= updated[i + 1].index
+        if @compare(startIndex, updated[i + 1].index) <= 0
           @removeMarkerOnPath(marker, updated[i + 1], node, i)
         else
           updated[i].addMarkerAtLevel(marker, i)
@@ -219,14 +232,14 @@ class IntervalSkipList
     for i in [node.height - 1..0]
       for marker in clone(updated[i].markers[i])
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if node.next[i].index > endIndex
+        if @compare(node.next[i].index, endIndex) > 0
           newDemoted.push(marker)
           updated[i].removeMarkerAtLevel(marker, i)
 
       for marker in clone(demoted)
         @placeMarkerOnPath(marker, updated[i + 1], updated[i], i)
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if node.next[i].index <= endIndex
+        if @compare(node.next[i].index, endIndex) <= 0
           updated[i].addMarkerAtLevel(marker, i)
           remove(demoted, marker)
 
@@ -239,13 +252,13 @@ class IntervalSkipList
     for i in [node.height - 1..0]
       for marker in node.markers[i]
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if updated[i].index < startIndex
+        if @compare(updated[i].index, startIndex) < 0
           newDemoted.push(marker)
 
       for marker in clone(demoted)
         @placeMarkerOnPath(marker, node.next[i], node.next[i + 1], i)
         [startIndex, endIndex] = @intervalsByMarker[marker]
-        if updated[i].index >= startIndex
+        if @compare(updated[i].index, startIndex) >= 0
           remove(demoted, marker)
 
       demoted.push(newDemoted...)
@@ -264,14 +277,15 @@ class IntervalSkipList
     i = 0
 
     # Mark non-descending path
-    while node.next[i].index <= endIndex
-      i++ while i < node.height - 1 and node.next[i + 1].index <= endIndex
+    while @compare(node.next[i].index, endIndex) <= 0
+      i++ while i < node.height - 1 and @compare(node.next[i + 1].index, endIndex) <= 0
       node.addMarkerAtLevel(marker, i)
       node = node.next[i]
 
     # Mark non-ascending path
     while node isnt endNode
-      i-- while i > 0 and node.next[i].index > endIndex
+      i-- while i > 0 and @compare(node.next[i].index, endIndex) > 0
+      debugger unless node?
       node.addMarkerAtLevel(marker, i)
       node = node.next[i]
 
@@ -287,14 +301,14 @@ class IntervalSkipList
     i = 0
 
     # Unmark non-descending path
-    while node.next[i].index <= endIndex
-      i++ while i < node.height - 1 and node.next[i + 1].index <= endIndex
+    while @compare(node.next[i].index, endIndex) <= 0
+      i++ while i < node.height - 1 and @compare(node.next[i + 1].index, endIndex) <= 0
       node.removeMarkerAtLevel(marker, i)
       node = node.next[i]
 
     # Unmark non-ascending path
     while node isnt endNode
-      i-- while i > 0 and node.next[i].index > endIndex
+      i-- while i > 0 and @compare(node.next[i].index, endIndex) > 0
       node.removeMarkerAtLevel(marker, i)
       node = node.next[i]
 
@@ -332,7 +346,7 @@ class IntervalSkipList
     for i in [@maxHeight - 1..0]
       # Move forward as far as possible while keeping the currentNode's index less
       # than the index being inserted.
-      while currentNode.next[i].index < index
+      while @compare(currentNode.next[i].index, index) < 0
         currentNode = currentNode.next[i]
       # When the next node's index would be bigger than the index being inserted,
       # record the last node visited at the current level and drop to the next level.
@@ -340,7 +354,7 @@ class IntervalSkipList
     currentNode.next[0]
 
   sortIndices: (indices) ->
-    clone(indices).sort (a, b) -> if a < b then -1 else 1
+    clone(indices).sort (a, b) => @compare(a, b)
 
   # Private: Returns a height between 1 and maxHeight (inclusive). Taller heights
   # are logarithmically less probable than shorter heights because each increase
@@ -357,7 +371,7 @@ class IntervalSkipList
       node = @findClosestNode(startIndex)
       unless node.index is startIndex
         throw new Error("Could not find node for marker #{marker} with start index #{startIndex}")
-      node.verifyMarkerInvariant(marker, endIndex)
+      node.verifyMarkerInvariant(marker, endIndex, @compare)
 
 class Node
   constructor: (@height, @index) ->
@@ -396,22 +410,22 @@ class Node
   markersAboveLevel: (level) ->
     flatten(@markers[level...@height])
 
-  verifyMarkerInvariant: (marker, endIndex) ->
+  verifyMarkerInvariant: (marker, endIndex, compare) ->
     return if @index is endIndex
     for i in [@height - 1..0]
       nextIndex = @next[i].index
-      if nextIndex <= endIndex
+      if compare(nextIndex, endIndex) <= 0
         unless include(@markers[i], marker)
           throw new Error("Node at #{@index} should have marker #{marker} at level #{i} pointer to node at #{nextIndex} <= #{endIndex}")
-        @verifyNotMarkedBelowLevel(marker, i, nextIndex) if i > 0
-        @next[i].verifyMarkerInvariant(marker, endIndex)
+        @verifyNotMarkedBelowLevel(marker, i, nextIndex, compare) if i > 0
+        @next[i].verifyMarkerInvariant(marker, endIndex, compare)
         return
     throw new Error("Node at #{@index} should have marker #{marker} on some forward pointer to an index <= #{endIndex}, but it doesn't")
 
-  verifyNotMarkedBelowLevel: (marker, level, untilIndex) ->
+  verifyNotMarkedBelowLevel: (marker, level, untilIndex, compare) ->
     for i in [level - 1..0]
       if include(@markers[i], marker)
         throw new Error("Node at #{@index} should not have marker #{marker} at level #{i} pointer to node at #{@next[i].index}")
 
-    if @next[0].index < untilIndex
-      @next[0].verifyNotMarkedBelowLevel(marker, level, untilIndex)
+    if compare(@next[0].index, untilIndex) < 0
+      @next[0].verifyNotMarkedBelowLevel(marker, level, untilIndex, compare)
