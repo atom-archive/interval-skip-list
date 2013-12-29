@@ -411,7 +411,7 @@ class Node
     flatten(@markers[level...@height])
 
   verifyMarkerInvariant: (marker, endIndex, compare) ->
-    return if @compare(@index, endIndex) is 0
+    return if compare(@index, endIndex) is 0
     for i in [@height - 1..0]
       nextIndex = @next[i].index
       if compare(nextIndex, endIndex) <= 0
