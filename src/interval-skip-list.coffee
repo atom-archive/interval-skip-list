@@ -17,6 +17,16 @@ class IntervalSkipList
   maxHeight: 8
   probability: .25
 
+  # Public: Constructs an IntervalSkipList with an optional custom comparator,
+  # min index, and max index.
+  #
+  # + params
+  #   - compare: A function that compares two arguments a and b and returns -1,
+  #     1, or 0 based on whether a is less than, greater than, or equal to b.
+  #   - minIndex: A value that is guaranteed to be less than any valid index.
+  #     Defaults to -Infinity.
+  #   - maxIndex: A value that is guaranteed to be greater than any valid index.
+  #     Defaults to +Infinity.
   constructor: (params) ->
     {@compare, minIndex, maxIndex} = params if params?
     @compare ?= DefaultComparator
