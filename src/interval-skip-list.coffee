@@ -71,7 +71,7 @@ class IntervalSkipList
   # search index.
   findStartingAt: (searchIndex) ->
     node = @findClosestNode(searchIndex)
-    if node.index is searchIndex
+    if @compare(node.index, searchIndex) is 0
       node.startingMarkers
     else
       []
@@ -80,7 +80,7 @@ class IntervalSkipList
   # search index.
   findEndingAt: (searchIndex) ->
     node = @findClosestNode(searchIndex)
-    if node.index is searchIndex
+    if @compare(node.index, searchIndex) is 0
       node.endingMarkers
     else
       []
@@ -216,7 +216,7 @@ class IntervalSkipList
   removeNode: (index) ->
     update = @buildUpdateArray()
     node = @findClosestNode(index, update)
-    if node.index is index
+    if @compare(node.index, index) is 0
       @adjustMarkersOnRemove(node, update)
       for i in [0...node.height]
         update[i].next[i] = node.next[i]
@@ -369,7 +369,7 @@ class IntervalSkipList
   verifyMarkerInvariant: ->
     for marker, [startIndex, endIndex] of @intervalsByMarker
       node = @findClosestNode(startIndex)
-      unless node.index is startIndex
+      unless @compare(node.index, startIndex) is 0
         throw new Error("Could not find node for marker #{marker} with start index #{startIndex}")
       node.verifyMarkerInvariant(marker, endIndex, @compare)
 
@@ -411,7 +411,7 @@ class Node
     flatten(@markers[level...@height])
 
   verifyMarkerInvariant: (marker, endIndex, compare) ->
-    return if @index is endIndex
+    return if @compare(@index, endIndex) is 0
     for i in [@height - 1..0]
       nextIndex = @next[i].index
       if compare(nextIndex, endIndex) <= 0
