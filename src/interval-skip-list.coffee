@@ -28,13 +28,13 @@ class IntervalSkipList
   #   - maxIndex: A value that is guaranteed to be greater than any valid index.
   #     Defaults to +Infinity.
   constructor: (params) ->
-    {@compare, minIndex, maxIndex} = params if params?
+    {@compare, @minIndex, @maxIndex} = params if params?
     @compare ?= DefaultComparator
-    minIndex ?= -Infinity
-    maxIndex ?= Infinity
+    @minIndex ?= -Infinity
+    @maxIndex ?= Infinity
 
-    @head = new Node(@maxHeight, minIndex)
-    @tail = new Node(@maxHeight, maxIndex)
+    @head = new Node(@maxHeight, @minIndex)
+    @tail = new Node(@maxHeight, @maxIndex)
     @head.next[i] = @tail for i in [0...@maxHeight]
     @intervalsByMarker = {}
 
@@ -125,6 +125,17 @@ class IntervalSkipList
   insert: (marker, startIndex, endIndex) ->
     if @intervalsByMarker[marker]?
       throw new Error("Interval for #{marker} already exists.")
+
+    if @compare(startIndex, endIndex) > 0
+      throw new Error("Start index #{startIndex} must be <= end index #{endIndex}")
+
+    if @compare(startIndex, @minIndex) < 0
+      throw new Error("Start index #{startIndex} must be > min index #{@minIndex}")
+
+    if @compare(endIndex, @maxIndex) >= 0
+      throw new Error("Start index #{endIndex} must be < max index #{@maxIndex}")
+
+
     startNode = @insertNode(startIndex)
     endNode = @insertNode(endIndex)
     @placeMarker(marker, startNode, endNode)
