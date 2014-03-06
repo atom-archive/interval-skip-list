@@ -115,6 +115,20 @@ class IntervalSkipList
       node = node.next[0]
     markers
 
+  # Pubilc: Returns an array of markers stath start and end within the given
+  # index range, inclusive.
+  findContainedIn: (searchStartIndex, searchEndIndex) ->
+    startedMarkers = {}
+    markers = []
+    node = @findClosestNode(searchStartIndex)
+    while @compare(node.index, searchEndIndex) <= 0
+      for marker in node.startingMarkers
+        startedMarkers[marker] = true
+      for marker in node.endingMarkers
+        markers.push(marker) if startedMarkers[marker]
+      node = node.next[0]
+    markers
+
   # Public: Insert an interval identified by marker that spans inclusively
   # the given start and end indices.
   #
