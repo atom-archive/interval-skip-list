@@ -44,16 +44,18 @@ describe "IntervalSkipList", ->
               else
                 expect(markers).not.toContain(marker)
 
-    describe "when passed multiple indices", ->
-      it "returns markers for intervals containing all the given indices", ->
+    describe "when passed an index range", ->
+      it "returns markers for intervals containing both indices", ->
         times 10, ->
           list = buildRandomList()
           times 10, ->
             indices = []
-            times random(2, 5), -> indices.push(random(100))
-            markers = list.findContaining(indices...)
-            for marker, [startIndex, endIndex] of list.intervalsByMarker
-              if all(indices, (index) -> startIndex <= index <= endIndex)
+            startIndex = random(100)
+            endIndex = random(100)
+            [startIndex, endIndex] = [endIndex, startIndex] if startIndex > endIndex
+            markers = list.findContaining(startIndex, endIndex)
+            for marker, [intervalStart, intervalEnd] of list.intervalsByMarker
+              if intervalStart <= startIndex <= endIndex <= intervalEnd
                 expect(markers).toContain(marker)
               else
                 expect(markers).not.toContain(marker)
