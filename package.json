@@ -1,6 +1,6 @@
 {
   "name": "interval-skip-list",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A data structure for finding all intervals that overlap a point in O(ln n)",
   "main": "lib/interval-skip-list.js",
   "scripts": {
