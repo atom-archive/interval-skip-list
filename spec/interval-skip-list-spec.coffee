@@ -61,18 +61,19 @@ describe "IntervalSkipList", ->
                 expect(markers).not.toContain(marker)
 
   describe "::findIntersecting(indices...)", ->
-    it "returns markers for intervals intersecting the given set of indices", ->
+    it "returns markers for intervals intersecting the given index range", ->
       times 10, ->
         list = buildRandomList()
         times 10, ->
-          indices = []
-          times random(2, 5), -> indices.push(random(100))
-          markers = list.findIntersecting(indices...)
-          for marker, [startIndex, endIndex] of list.intervalsByMarker
-            if any indices, ((index) -> startIndex <= index <= endIndex)
-              expect(markers).toContain(marker)
-            else
+          searchStartIndex = random(100)
+          searchEndIndex = random(100)
+          [searchStartIndex, searchEndIndex] = [searchEndIndex, searchStartIndex] if searchStartIndex > searchEndIndex
+          markers = list.findIntersecting(searchStartIndex, searchEndIndex)
+          for marker, [intervalStart, intervalEnd] of list.intervalsByMarker
+            if intervalEnd < searchStartIndex or intervalStart > searchEndIndex
               expect(markers).not.toContain(marker)
+            else
+              expect(markers).toContain(marker)
 
   describe "::findStartingAt(index)", ->
     it "returns markers for intervals starting at the given index", ->

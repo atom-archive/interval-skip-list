@@ -73,9 +73,35 @@ class IntervalSkipList
       markers
 
   # Public: Returns an array of markers for intervals that intersect the given
-  # search indices.
-  findIntersecting: (searchIndices...) ->
-    union(searchIndices.map((searchIndex) => @findContaining(searchIndex))...)
+  # index range.
+  findIntersecting: (searchStartIndex, searchEndIndex) ->
+    markers = []
+    node = @head
+    for i in [@maxHeight - 1..1]
+      # Move forward as far as possible while keeping the node's index less
+      # than the search start index.
+      while @compare(node.next[i].index, searchStartIndex) < 0
+        node = node.next[i]
+      # When the next node's index would be greater than the search start index,
+      # drop down a level, recording forward markers at the current level since
+      # their intervals necessarily contain the search start index.
+      markers.push(node.markers[i]...)
+
+    # Scan to the node preceding the search start index at level 0. Any forward
+    # markers at level 0 of the node preceding the search start index belong
+    # to overlapping intervals.
+    while @compare(node.next[0].index, searchStartIndex) < 0
+      node = node.next[0]
+    markers.push(node.markers[0]...)
+
+    # Scan through all nodes that are <= the search end index. Any markers
+    # starting on such nodes intersect the search range.
+    node = node.next[0]
+    while @compare(node.index, searchEndIndex) <= 0
+      markers.push(node.startingMarkers...)
+      node = node.next[0]
+
+    markers
 
   # Public: Returns an array of markers for intervals that start at the given
   # search index.
