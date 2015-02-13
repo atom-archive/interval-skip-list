@@ -1,5 +1,5 @@
 IntervalSkipList = require '../src/interval-skip-list'
-{random, times, keys, uniq, all, any} = require 'underscore'
+{random, times, keys, uniq, all, any} = require 'underscore-plus'
 
 describe "IntervalSkipList", ->
   list = null

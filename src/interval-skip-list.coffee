@@ -1,4 +1,4 @@
-{clone, include, first, last, union, intersection} = require 'underscore'
+{clone, include, first, last, union, intersection} = require 'underscore-plus'
 
 remove = (array, element) ->
   index = array.indexOf(element)
